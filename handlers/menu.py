@@ -3,11 +3,12 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
+from database import async_db_manager
 from filters.chat_type import IsAllowedUserId
 from keyboards.transaction_record import get_category_inline_keyboard, make_menu_keyboard, make_start_button, \
-    make_cancel_btn, get_menu_statistic_inline_keyboard
-from services.statistic import WalletQueries
-from services.wallet_management import Transactions
+    make_cancel_btn, get_menu_statistic_inline_keyboard, make_transaction_btn
+from services.statistic import WalletService
+from services.wallet_management import Transactions, WalletManager
 from states.transaction_record import TransactionRecord, StatisticWallet
 
 menu = Router()
@@ -17,15 +18,23 @@ allowed_user_ids = [353032411, 1288729238]
 
 @menu.message(Command(commands=['menu']), IsAllowedUserId(allowed_user_ids),  StateFilter(None))
 async def start_menu(message: Message, state: FSMContext):
-    chose_menu = ['Доход', 'Расход', 'Баланс']
 
     await message.answer(
         text='Выбери действие',
-        reply_markup=make_menu_keyboard(chose_menu)
+        reply_markup=make_menu_keyboard()
+    )
+
+
+
+@menu.message(F.text.startswith('Добавить'), IsAllowedUserId(allowed_user_ids),  StateFilter(None))
+async def start_menu(message: Message, state: FSMContext):
+
+    await message.answer(
+        text='Выбери действие',
+        reply_markup=make_transaction_btn()
     )
 
     await state.set_state(TransactionRecord.transaction_type)
-
 
 @menu.message(F.text.in_(['Доход', 'Расход']), IsAllowedUserId(allowed_user_ids),  TransactionRecord.transaction_type)
 async def get_type_record(message: Message, state: FSMContext):
@@ -45,10 +54,9 @@ async def get_type_record(message: Message, state: FSMContext):
 
 @menu.message(IsAllowedUserId(allowed_user_ids),  TransactionRecord.transaction_type)
 async def get_type_record_incorrect(message: Message, state: FSMContext):
-    chose_menu = ['Доход', 'Расход', 'Баланс']
     await message.answer(
         text='Не нужно ничего вводить, выбери тип на кнопках',
-        reply_markup=make_menu_keyboard(chose_menu)
+        reply_markup=make_menu_keyboard()
     )
 
 
@@ -111,22 +119,3 @@ async def get_comment(message: Message, state: FSMContext):
     )
     await state.clear()
 
-
-@menu.message(Command(commands=['statistic']), IsAllowedUserId(allowed_user_ids))
-async def get_menu_statistic(message: Message, state: FSMContext):
-    await message.answer(
-        text='Выбери статистику',
-        reply_markup=get_menu_statistic_inline_keyboard()
-    )
-    await state.set_state(StatisticWallet.menu_statistic)
-
-
-@menu.message(Command(commands=['statistic']), IsAllowedUserId(allowed_user_ids), StatisticWallet.menu_statistic)
-async def get_menu_statistic(message: Message, state: FSMContext):
-    wallet = WalletQueries(message.from_user.id)
-    wallet_statistics = wallet.get_last_records()
-    await message.answer(
-        text='Выбери статистику',
-        reply_markup=get_menu_statistic_inline_keyboard()
-    )
-    await state.set_state(StatisticWallet.type_statistic)
