@@ -1,14 +1,8 @@
-import asyncio
-from asyncio import current_task
 from pathlib import Path
 from typing import ClassVar
 
-import asyncpg
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import SecretStr
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, async_scoped_session
-from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 class Settings(BaseSettings):
@@ -28,5 +22,3 @@ class Settings(BaseSettings):
 
 
 config = Settings()
-
-
