@@ -29,6 +29,11 @@ class WalletManager:
 
 
 class CategoryManager:
+    @staticmethod
+    async def get_categories(session: AsyncSession):
+        categories_result = await session.execute(text('SELECT category_name FROM categories'))
+        return categories_result.fetchall()
+
     async def get_category_id(self, session: AsyncSession, category_name: str) -> str:
         category_result = await session.execute(
             text('SELECT id FROM categories WHERE category_name = :category_name'),
