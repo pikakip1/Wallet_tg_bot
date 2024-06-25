@@ -12,11 +12,6 @@ common_router = Router()
 allowed_user_ids = [353032411, 1288729238]
 
 
-@common_router.message(F.text.lower() == 'отмена', IsAllowedUserId(allowed_user_ids))
-async def btn_cancel(message: Message, state: FSMContext):
-    await cmd_cancel(message, state)
-
-
 @common_router.message(Command(commands=['start']), IsAllowedUserId(allowed_user_ids))
 async def start_menu(message: Message, state: FSMContext):
     await message.answer(
@@ -24,9 +19,9 @@ async def start_menu(message: Message, state: FSMContext):
     )
 
 
+@common_router.message(F.text.lower() == 'Добавить кошелек', IsAllowedUserId(allowed_user_ids))
 @common_router.message(Command(commands=['Add_wallet']), IsAllowedUserId(allowed_user_ids))
 async def start_menu(message: Message, state: FSMContext):
-    print(message.text)
     await message.answer(
         text=f'Для добавления кошелька введите:\n'
              'Название кошелька и счет на кошельке'
@@ -47,6 +42,7 @@ async def start_menu(message: Message, state: FSMContext):
         await message.answer(text=f'Ошибка ввода, введите название кошелька и сумму')
 
 
+@common_router.message(F.text.lower() == 'отмена', IsAllowedUserId(allowed_user_ids))
 @common_router.message(Command(commands=['cancel']))
 async def cmd_cancel(message: Message, state: FSMContext):
     await state.clear()
