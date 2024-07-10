@@ -1,67 +1,65 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
-
-from database import async_db_manager
+from aiogram.types import CallbackQuery, Message
 from filters.chat_type import IsAllowedUserId
-from keyboards.transaction_record import get_category_inline_keyboard, make_menu_keyboard, make_start_button, \
-    make_cancel_btn, get_menu_statistic_inline_keyboard, make_transaction_btn
-from services.statistic import WalletService
-from services.wallet_management import Transactions, WalletManager
-from states.transaction_record import TransactionRecord, StatisticWallet
+from keyboards.transaction_record import (
+    get_category_inline_keyboard,
+    make_cancel_btn,
+    make_menu_keyboard,
+    make_start_button,
+    make_transaction_btn,
+)
+from services.category_service import CategoryService
+from services.transaction_service import TransactionService
+from states.transaction_record import TransactionRecord
 
 menu = Router()
 
 allowed_user_ids = [353032411, 1288729238]
 
 
-@menu.message(Command(commands=['menu']), IsAllowedUserId(allowed_user_ids),  StateFilter(None))
+@menu.message(Command(commands=["menu"]), IsAllowedUserId(allowed_user_ids), StateFilter(None))
 async def start_menu(message: Message, state: FSMContext):
 
-    await message.answer(
-        text='Выбери действие',
-        reply_markup=make_menu_keyboard()
-    )
+    await message.answer(text="Выбери действие", reply_markup=make_menu_keyboard())
 
 
+@menu.message(F.text.startswith("Добавить"), IsAllowedUserId(allowed_user_ids), StateFilter(None))
+async def add_record(message: Message, state: FSMContext):
 
-@menu.message(F.text.startswith('Добавить'), IsAllowedUserId(allowed_user_ids),  StateFilter(None))
-async def start_menu(message: Message, state: FSMContext):
-
-    await message.answer(
-        text='Выбери действие',
-        reply_markup=make_transaction_btn()
-    )
+    await message.answer(text="Выбери действие", reply_markup=make_transaction_btn())
 
     await state.set_state(TransactionRecord.transaction_type)
 
-@menu.message(F.text.in_(['Доход', 'Расход']), IsAllowedUserId(allowed_user_ids),  TransactionRecord.transaction_type)
+
+@menu.message(
+    F.text.in_(["Доход", "Расход"]),
+    IsAllowedUserId(allowed_user_ids),
+    TransactionRecord.transaction_type,
+)
 async def get_type_record(message: Message, state: FSMContext):
     await message.answer(
         reply_markup=make_cancel_btn(),
-        text='Для отмены нажми Отмена',
+        text="Для отмены нажми Отмена",
     )
-    categories = ['Одежда', 'Еда', 'Аренда']
+    categories = await CategoryService().get_all_categories()
     await state.update_data(transaction_type=message.text.lower())
     await message.answer(
-        text='Выбери тип',
+        text="Выбери тип",
         reply_markup=get_category_inline_keyboard(categories),
     )
 
     await state.set_state(TransactionRecord.transaction_category)
 
 
-@menu.message(IsAllowedUserId(allowed_user_ids),  TransactionRecord.transaction_type)
+@menu.message(IsAllowedUserId(allowed_user_ids), TransactionRecord.transaction_type)
 async def get_type_record_incorrect(message: Message, state: FSMContext):
-    await message.answer(
-        text='Не нужно ничего вводить, выбери тип на кнопках',
-        reply_markup=make_menu_keyboard()
-    )
+    await message.answer(text="Выбери тип на кнопках", reply_markup=make_menu_keyboard())
 
 
 @menu.callback_query(
-    F.data.startswith('category_'),
+    F.data.startswith("category_"),
     IsAllowedUserId(allowed_user_ids),
     TransactionRecord.transaction_category,
 )
@@ -75,47 +73,44 @@ async def get_categories(callback: CallbackQuery, state: FSMContext):
     await state.set_state(TransactionRecord.transaction_amount)
 
 
-@menu.message(IsAllowedUserId(allowed_user_ids),  TransactionRecord.transaction_category)
+@menu.message(IsAllowedUserId(allowed_user_ids), TransactionRecord.transaction_category)
 async def get_categories_incorrect(message: Message, state: FSMContext):
-    categories = ['Одежда', 'Еда', 'Аренда']
+    categories = await CategoryService().get_all_categories()
     await message.answer(
-        text='Не нужно ничего вводить, выбери нужную кнопку',
-        reply_markup=get_category_inline_keyboard(categories)
+        text="Не нужно ничего вводить, выбери нужную кнопку",
+        reply_markup=get_category_inline_keyboard(categories),
     )
 
 
-@menu.message(IsAllowedUserId(allowed_user_ids),  TransactionRecord.transaction_amount)
+@menu.message(IsAllowedUserId(allowed_user_ids), TransactionRecord.transaction_amount)
 async def get_amount(message: Message, state: FSMContext):
     if message.text.isdigit():
         amount = int(message.text)
         await state.update_data(transaction_amount=amount)
-        await message.answer(text=f'Добавьте комментарий или введите "-"')
+        await message.answer(text='Добавьте комментарий или введите "-"')
         await state.set_state(TransactionRecord.transaction_comment)
     else:
-        await message.answer(text=f'Пожалуйста, введите корректное число.')
+        await message.answer(text="Пожалуйста, введите корректное число.")
 
 
-@menu.message(IsAllowedUserId(allowed_user_ids),  TransactionRecord.transaction_comment)
+@menu.message(IsAllowedUserId(allowed_user_ids), TransactionRecord.transaction_comment)
 async def get_comment(message: Message, state: FSMContext):
     await state.update_data(transaction_comment=message.text)
     user_date = await state.get_data()
-    transaction = Transactions(message.from_user.id)
-
-    await transaction.add_transaction(
+    await TransactionService(message.from_user.id).add_transaction(
         amount=user_date["transaction_amount"],
-        category=user_date["transaction_category"],
-        type_transaction='income' if user_date["transaction_type"] == 'доход' else 'expense',
-        comment=user_date['transaction_comment'],
-        wallet_name='Основной'
+        category_name=user_date["transaction_category"],
+        type_transaction=("income" if user_date["transaction_type"] == "доход" else "expense"),
+        comment=user_date["transaction_comment"],
+        wallet_name="Основной",
     )
 
     await message.answer(
-        text=f'Добавлена запись:\n'
-             f'- Тип: {user_date["transaction_type"]}\n'
-             f'- Категория: {user_date["transaction_category"]}\n'
-             f'- Сумма: {user_date["transaction_amount"]}\n'
-             f'- Комментарий: {user_date["transaction_comment"]}',
-        reply_markup=make_start_button()
+        text=f"Добавлена запись:\n"
+        f'- Тип: {user_date["transaction_type"]}\n'
+        f'- Категория: {user_date["transaction_category"]}\n'
+        f'- Сумма: {user_date["transaction_amount"]}\n'
+        f'- Комментарий: {user_date["transaction_comment"]}',
+        reply_markup=make_start_button(),
     )
     await state.clear()
-

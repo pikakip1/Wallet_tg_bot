@@ -1,8 +1,7 @@
 from asyncio import current_task
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, async_scoped_session
-
 from config import config
+from sqlalchemy.ext.asyncio import async_scoped_session, async_sessionmaker, create_async_engine
 
 
 class AsyncDatabaseManager:
