@@ -1,0 +1,38 @@
+[tool.black]
+line-length = 125
+target-version = ['py310']
+extend-exclude = '''
+(
+  versions/
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 125
+multi_line_output = 3
+skip_gitignore = true
+skip_glob = ["**/versions/*", "**/settings/*"]
+src_paths = ["<your_code_dir>"]
+
+[tool.poetry]
+name = "wallet-tg-bot"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiogram = "^3.10.0"
+SQLAlchemy = "^2.0.31"
+alembic = "^1.13.2"
+asyncpg = "^0.29.0"
+flake8 = "^7.1.0"
+black = "^24.4.2"
+isort = "^5.13.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
