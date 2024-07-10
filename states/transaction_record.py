@@ -1,4 +1,4 @@
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.state import State, StatesGroup
 
 
 class WalletCreate(StatesGroup):
@@ -15,3 +15,7 @@ class TransactionRecord(StatesGroup):
 class StatisticWallet(StatesGroup):
     menu_statistic = State()
     type_statistic = State()
+
+
+class AddAccount(StatesGroup):
+    set_account = State()
