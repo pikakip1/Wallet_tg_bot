@@ -32,5 +32,6 @@ async def add_categories():
 def main():
     asyncio.run(add_categories())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
