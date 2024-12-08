@@ -24,7 +24,7 @@ class Wallet(Base):
     __tablename__ = "wallet"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name_wallet: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    name_wallet: Mapped[str] = mapped_column(String(128), nullable=False)
     amount: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False, default=0.0)
 
     account_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("account.id", ondelete="CASCADE"))
