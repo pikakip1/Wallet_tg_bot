@@ -45,9 +45,10 @@ def get_category_inline_keyboard(categories: list[str]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     for category in categories:
-        builder.add(InlineKeyboardButton(text=category, callback_data=f"category_{category}"))
+        builder.row(InlineKeyboardButton(text=category, callback_data=f"category_{category}"))
 
     return builder.as_markup()
+
 
 
 def get_menu_statistic_inline_keyboard() -> InlineKeyboardMarkup:
